@@ -36,6 +36,11 @@
     "typescript": "^2.0.9",
     "webpack": "^2.1.0-beta.25"
   },
+  "files": [
+    "build/es5/",
+    "build/es2015/",
+    "src/"
+  ],
   "homepage": "https://github.com/chrisguttandin/worker-timers-broker",
   "jsnext:main": "build/es2015/module.js",
   "license": "MIT",
