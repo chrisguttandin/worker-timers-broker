@@ -33,7 +33,20 @@ describe('module', () => {
                 constructor (url) {
                     super(url);
 
+                    const addEventListener = this.addEventListener;
+
+                    // This is an ugly hack to prevent the broker from handling mirrored events.
+                    this.addEventListener = (index, ...args) => {
+                        if (typeof index === 'number') {
+                            return addEventListener.apply(this, args);
+                        }
+                    };
+
                     instances.push(this);
+                }
+
+                static addEventListener (index, ...args) {
+                    return instances[index].addEventListener(index, ...args);
                 }
 
                 static get instances () {
@@ -65,7 +78,7 @@ describe('module', () => {
         });
 
         it('should send the correct clearing message', (done) => {
-            Worker.instances[0].addEventListener('message', ({ data }) => {
+            Worker.addEventListener(0, 'message', ({ data }) => {
                 try {
                     expect(data.id).to.be.a('number');
 
@@ -95,7 +108,7 @@ describe('module', () => {
         });
 
         it('should send the correct clearing message', (done) => {
-            Worker.instances[0].addEventListener('message', ({ data }) => {
+            Worker.addEventListener(0, 'message', ({ data }) => {
                 try {
                     expect(data.id).to.be.a('number');
 
@@ -136,7 +149,7 @@ describe('module', () => {
         });
 
         it('should send the correct scheduling message', (done) => {
-            Worker.instances[0].addEventListener('message', ({ data }) => {
+            Worker.addEventListener(0, 'message', ({ data }) => {
                 try {
                     expect(data).to.deep.equal({
                         id: null,
@@ -177,7 +190,7 @@ describe('module', () => {
         });
 
         it('should send the correct scheduling message', (done) => {
-            Worker.instances[0].addEventListener('message', ({ data }) => {
+            Worker.addEventListener(0, 'message', ({ data }) => {
                 try {
                     expect(data).to.deep.equal({
                         id: null,
