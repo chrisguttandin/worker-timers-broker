@@ -67,10 +67,12 @@ describe('module', () => {
         it('should send the correct clearing message', (done) => {
             Worker.instances[0].addEventListener('message', ({ data }) => {
                 try {
+                    expect(data.id).to.be.a('number');
+
                     expect(data).to.deep.equal({
-                        action: 'clear',
-                        id,
-                        type: 'interval'
+                        id: data.id,
+                        method: 'clear',
+                        params: { timerId: id, timerType: 'interval' }
                     });
 
                     done();
@@ -95,10 +97,12 @@ describe('module', () => {
         it('should send the correct clearing message', (done) => {
             Worker.instances[0].addEventListener('message', ({ data }) => {
                 try {
+                    expect(data.id).to.be.a('number');
+
                     expect(data).to.deep.equal({
-                        action: 'clear',
-                        id,
-                        type: 'timeout'
+                        id: data.id,
+                        method: 'clear',
+                        params: { timerId: id, timerType: 'timeout' }
                     });
 
                     done();
@@ -135,11 +139,9 @@ describe('module', () => {
             Worker.instances[0].addEventListener('message', ({ data }) => {
                 try {
                     expect(data).to.deep.equal({
-                        action: 'set',
-                        delay,
-                        id,
-                        now,
-                        type: 'interval'
+                        id: null,
+                        method: 'set',
+                        params: { delay, now, timerId: id, timerType: 'interval' }
                     });
 
                     done();
@@ -178,11 +180,9 @@ describe('module', () => {
             Worker.instances[0].addEventListener('message', ({ data }) => {
                 try {
                     expect(data).to.deep.equal({
-                        action: 'set',
-                        delay,
-                        id,
-                        now,
-                        type: 'timeout'
+                        id: null,
+                        method: 'set',
+                        params: { delay, now, timerId: id, timerType: 'timeout' }
                     });
 
                     done();

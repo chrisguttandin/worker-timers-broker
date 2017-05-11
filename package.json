@@ -3,6 +3,9 @@
   "bugs": {
     "url": "https://github.com/chrisguttandin/worker-timers-broker/issues"
   },
+  "dependencies": {
+    "worker-timers-worker": "^3.0.0"
+  },
   "description": "The broker which is used by the worker-timers package.",
   "devDependencies": {
     "babel-preset-es2015": "^6.18.0",

@@ -1,6 +1,9 @@
+import { IClearRequest, ISetNotification, IWorkerTimersWorkerEvent, TTimerType } from 'worker-timers-worker';
+import { isCallNotification } from './guards/call-notification';
+
 const MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER || Math.pow(2, 53) - 1;
 
-const generateUniqueId = (map) => {
+const generateUniqueId = (map: Map<number, any>) => {
     let id = Math.round(Math.random() * MAX_SAFE_INTEGER);
 
     while (map.has(id)) {
@@ -11,93 +14,139 @@ const generateUniqueId = (map) => {
 };
 
 export const load = (url: string) => {
-    const scheduledIntervalFunctions: Map<number, Function> = new Map();
-    const scheduledTimeoutFunctions: Map<number, Function> = new Map();
+    const scheduledIntervalFunctions: Map<number, number | Function> = new Map();
+    const scheduledTimeoutFunctions: Map<number, number | Function> = new Map();
+    const unrespondedRequests: Map<number, { timerId: number, timerType: TTimerType }> = new Map();
 
     const worker = new Worker(url);
 
-    worker.addEventListener('message', ({ data: { id, type } }) => {
-        if (type === 'interval') {
-            const func = scheduledIntervalFunctions.get(id);
+    worker.addEventListener('message', ({ data }: IWorkerTimersWorkerEvent) => {
+        if (isCallNotification(data)) {
+            const { params: { timerId, timerType } } = data;
 
-            if (func) {
-                func();
+            if (timerType === 'interval') {
+                const numberOrFunc = scheduledIntervalFunctions.get(timerId);
+
+                if (typeof numberOrFunc === 'number') {
+                    const timerIdAndTimerType = unrespondedRequests.get(numberOrFunc);
+
+                    if (timerIdAndTimerType === undefined
+                            || timerIdAndTimerType.timerId !== timerId
+                            || timerIdAndTimerType.timerType !== timerType) {
+                        throw new Error('The timer is in an undefined state.');
+                    }
+                } else {
+                    numberOrFunc();
+                }
+
+            } else if (timerType === 'timeout') {
+                const numberOrFunc = scheduledTimeoutFunctions.get(timerId);
+
+                if (typeof numberOrFunc === 'number') {
+                    const timerIdAndTimerType = unrespondedRequests.get(numberOrFunc);
+
+                    if (timerIdAndTimerType === undefined
+                            || timerIdAndTimerType.timerId !== timerId
+                            || timerIdAndTimerType.timerType !== timerType) {
+                        throw new Error('The timer is in an undefined state.');
+                    }
+                } else {
+                    numberOrFunc();
+
+                    // A timeout can be savely deleted because it is only called once.
+                    scheduledTimeoutFunctions.delete(timerId);
+                }
             }
+        } else {
+            const { id } = data;
 
-        } else if (type === 'timeout') {
-            const func = scheduledTimeoutFunctions.get(id);
+            const { timerId, timerType } = unrespondedRequests.get(id);
 
-            if (func) {
-                func();
+            unrespondedRequests.delete(id);
 
-                // A timeout can be savely deleted because it is only called once.
-                scheduledTimeoutFunctions.delete(id);
+            if (timerType === 'interval') {
+                scheduledIntervalFunctions.delete(timerId);
+            } else {
+                scheduledTimeoutFunctions.delete(timerId);
             }
         }
-
-        // @todo Maybe throw an error.
     });
 
-    const clearInterval = (id: number) => {
-        scheduledIntervalFunctions.delete(id);
+    const clearInterval = (timerId: number) => {
+        const id = generateUniqueId(unrespondedRequests);
 
-        worker.postMessage({
-            action: 'clear',
+        unrespondedRequests.set(id, { timerId, timerType: 'interval' });
+        scheduledIntervalFunctions.set(timerId, id);
+
+        worker.postMessage(<IClearRequest> {
             id,
-            type: 'interval'
+            method: 'clear',
+            params: { timerId, timerType: 'interval' }
         });
     };
 
-    const clearTimeout = (id: number) => {
-        scheduledTimeoutFunctions.delete(id);
+    const clearTimeout = (timerId: number) => {
+        const id = generateUniqueId(unrespondedRequests);
 
-        worker.postMessage({
-            action: 'clear',
+        unrespondedRequests.set(id, { timerId, timerType: 'timeout' });
+        scheduledTimeoutFunctions.set(timerId, id);
+
+        worker.postMessage(<IClearRequest> {
             id,
-            type: 'timeout'
+            method: 'clear',
+            params: { timerId, timerType: 'timeout' }
         });
     };
 
     const setInterval = (func: Function, delay: number) => {
-        const id = generateUniqueId(scheduledIntervalFunctions);
+        const timerId = generateUniqueId(scheduledIntervalFunctions);
 
-        scheduledIntervalFunctions.set(id, () => {
+        scheduledIntervalFunctions.set(timerId, () => {
             func();
 
-            worker.postMessage({
-                action: 'set',
-                delay,
-                id,
-                now: performance.now(),
-                type: 'interval'
+            worker.postMessage(<ISetNotification> {
+                id: null,
+                method: 'set',
+                params: {
+                    delay,
+                    now: performance.now(),
+                    timerId,
+                    timerType: 'interval'
+                }
             });
         });
 
-        worker.postMessage({
-            action: 'set',
-            delay,
-            id,
-            now: performance.now(),
-            type: 'interval'
+        worker.postMessage(<ISetNotification> {
+            id: null,
+            method: 'set',
+            params: {
+                delay,
+                now: performance.now(),
+                timerId,
+                timerType: 'interval'
+            }
         });
 
-        return id;
+        return timerId;
     };
 
     const setTimeout = (func: Function, delay: number) => {
-        const id = generateUniqueId(scheduledTimeoutFunctions);
+        const timerId = generateUniqueId(scheduledTimeoutFunctions);
 
-        scheduledTimeoutFunctions.set(id, func);
+        scheduledTimeoutFunctions.set(timerId, func);
 
-        worker.postMessage({
-            action: 'set',
-            delay,
-            id,
-            now: performance.now(),
-            type: 'timeout'
+        worker.postMessage(<ISetNotification> {
+            id: null,
+            method: 'set',
+            params: {
+                delay,
+                now: performance.now(),
+                timerId,
+                timerType: 'timeout'
+            }
         });
 
-        return id;
+        return timerId;
     };
 
     return {
