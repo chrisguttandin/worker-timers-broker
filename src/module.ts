@@ -1,5 +1,6 @@
-import { IClearRequest, ISetNotification, IWorkerTimersWorkerEvent, TTimerType } from 'worker-timers-worker';
+import { IClearRequest, ISetNotification, IWorkerEvent, TTimerType } from 'worker-timers-worker';
 import { isCallNotification } from './guards/call-notification';
+import { isClearResponse } from './guards/clear-response';
 
 const MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER || Math.pow(2, 53) - 1;
 
@@ -20,7 +21,7 @@ export const load = (url: string) => {
 
     const worker = new Worker(url);
 
-    worker.addEventListener('message', ({ data }: IWorkerTimersWorkerEvent) => {
+    worker.addEventListener('message', ({ data }: IWorkerEvent) => {
         if (isCallNotification(data)) {
             const { params: { timerId, timerType } } = data;
 
@@ -61,7 +62,7 @@ export const load = (url: string) => {
                     throw new Error('The timer is in an undefined state.');
                 }
             }
-        } else {
+        } else if (isClearResponse(data)) {
             const { id } = data;
 
             const timerIdAndTimerType = unrespondedRequests.get(id);
@@ -79,6 +80,11 @@ export const load = (url: string) => {
                     scheduledTimeoutFunctions.delete(timerId);
                 }
             }
+        } else {
+            console.log(data);
+            const { error: { message } } = data;
+
+            throw new Error(message);
         }
     });
 
