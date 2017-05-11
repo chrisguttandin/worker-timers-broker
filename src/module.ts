@@ -114,16 +114,19 @@ export const load = (url: string) => {
         scheduledIntervalFunctions.set(timerId, () => {
             func();
 
-            worker.postMessage(<ISetNotification> {
-                id: null,
-                method: 'set',
-                params: {
-                    delay,
-                    now: performance.now(),
-                    timerId,
-                    timerType: 'interval'
-                }
-            });
+            // Doublecheck if the interval should still be rescheduled because it could have been cleared inside of func().
+            if (typeof scheduledIntervalFunctions.get(timerId) === 'function') {
+                worker.postMessage(<ISetNotification> {
+                    id: null,
+                    method: 'set',
+                    params: {
+                        delay,
+                        now: performance.now(),
+                        timerId,
+                        timerType: 'interval'
+                    }
+                });
+            }
         });
 
         worker.postMessage(<ISetNotification> {
