@@ -25,49 +25,59 @@ export const load = (url: string) => {
             const { params: { timerId, timerType } } = data;
 
             if (timerType === 'interval') {
-                const numberOrFunc = scheduledIntervalFunctions.get(timerId);
+                const idOrFunc = scheduledIntervalFunctions.get(timerId);
 
-                if (typeof numberOrFunc === 'number') {
-                    const timerIdAndTimerType = unrespondedRequests.get(numberOrFunc);
+                if (typeof idOrFunc === 'number') {
+                    const timerIdAndTimerType = unrespondedRequests.get(idOrFunc);
 
                     if (timerIdAndTimerType === undefined
                             || timerIdAndTimerType.timerId !== timerId
                             || timerIdAndTimerType.timerType !== timerType) {
                         throw new Error('The timer is in an undefined state.');
                     }
+                } else if (typeof idOrFunc !== 'undefined') {
+                    idOrFunc();
                 } else {
-                    numberOrFunc();
+                    throw new Error('The timer is in an undefined state.');
                 }
 
             } else if (timerType === 'timeout') {
-                const numberOrFunc = scheduledTimeoutFunctions.get(timerId);
+                const idOrFunc = scheduledTimeoutFunctions.get(timerId);
 
-                if (typeof numberOrFunc === 'number') {
-                    const timerIdAndTimerType = unrespondedRequests.get(numberOrFunc);
+                if (typeof idOrFunc === 'number') {
+                    const timerIdAndTimerType = unrespondedRequests.get(idOrFunc);
 
                     if (timerIdAndTimerType === undefined
                             || timerIdAndTimerType.timerId !== timerId
                             || timerIdAndTimerType.timerType !== timerType) {
                         throw new Error('The timer is in an undefined state.');
                     }
-                } else {
-                    numberOrFunc();
+                } else if (typeof idOrFunc !== 'undefined') {
+                    idOrFunc();
 
                     // A timeout can be savely deleted because it is only called once.
                     scheduledTimeoutFunctions.delete(timerId);
+                } else {
+                    throw new Error('The timer is in an undefined state.');
                 }
             }
         } else {
             const { id } = data;
 
-            const { timerId, timerType } = unrespondedRequests.get(id);
+            const timerIdAndTimerType = unrespondedRequests.get(id);
 
-            unrespondedRequests.delete(id);
-
-            if (timerType === 'interval') {
-                scheduledIntervalFunctions.delete(timerId);
+            if (timerIdAndTimerType === undefined) {
+                throw new Error('The timer is in an undefined state.');
             } else {
-                scheduledTimeoutFunctions.delete(timerId);
+                const { timerId, timerType } = timerIdAndTimerType;
+
+                unrespondedRequests.delete(id);
+
+                if (timerType === 'interval') {
+                    scheduledIntervalFunctions.delete(timerId);
+                } else {
+                    scheduledTimeoutFunctions.delete(timerId);
+                }
             }
         }
     });
