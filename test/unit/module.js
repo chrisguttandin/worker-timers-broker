@@ -148,7 +148,9 @@ describe('module', () => {
             expect(id).to.be.a('number');
         });
 
-        it('should send the correct scheduling message', (done) => {
+        it('should send the correct scheduling message', function (done) {
+            this.timeout(4000);
+
             Worker.addEventListener(0, 'message', ({ data }) => {
                 try {
                     expect(data).to.deep.equal({
@@ -189,7 +191,9 @@ describe('module', () => {
             expect(id).to.be.a('number');
         });
 
-        it('should send the correct scheduling message', (done) => {
+        it('should send the correct scheduling message', function (done) {
+            this.timeout(4000);
+
             Worker.addEventListener(0, 'message', ({ data }) => {
                 try {
                     expect(data).to.deep.equal({
