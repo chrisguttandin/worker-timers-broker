@@ -1,18 +1,7 @@
+import { generateUniqueNumber } from 'fast-unique-numbers';
 import { IClearRequest, ISetNotification, IWorkerEvent, TTimerType } from 'worker-timers-worker';
 import { isCallNotification } from './guards/call-notification';
 import { isClearResponse } from './guards/clear-response';
-
-const MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER || Math.pow(2, 53) - 1;
-
-const generateUniqueId = (map: Map<number, any>) => {
-    let id = Math.round(Math.random() * MAX_SAFE_INTEGER);
-
-    while (map.has(id)) {
-        id = Math.round(Math.random() * MAX_SAFE_INTEGER);
-    }
-
-    return id;
-};
 
 export const load = (url: string) => {
     const scheduledIntervalFunctions: Map<number, number | Function> = new Map();
@@ -88,7 +77,7 @@ export const load = (url: string) => {
     });
 
     const clearInterval = (timerId: number) => {
-        const id = generateUniqueId(unrespondedRequests);
+        const id = generateUniqueNumber(unrespondedRequests);
 
         unrespondedRequests.set(id, { timerId, timerType: 'interval' });
         scheduledIntervalFunctions.set(timerId, id);
@@ -101,7 +90,7 @@ export const load = (url: string) => {
     };
 
     const clearTimeout = (timerId: number) => {
-        const id = generateUniqueId(unrespondedRequests);
+        const id = generateUniqueNumber(unrespondedRequests);
 
         unrespondedRequests.set(id, { timerId, timerType: 'timeout' });
         scheduledTimeoutFunctions.set(timerId, id);
@@ -114,7 +103,7 @@ export const load = (url: string) => {
     };
 
     const setInterval = (func: Function, delay: number) => {
-        const timerId = generateUniqueId(scheduledIntervalFunctions);
+        const timerId = generateUniqueNumber(scheduledIntervalFunctions);
 
         scheduledIntervalFunctions.set(timerId, () => {
             func();
@@ -149,7 +138,7 @@ export const load = (url: string) => {
     };
 
     const setTimeout = (func: Function, delay: number) => {
-        const timerId = generateUniqueId(scheduledTimeoutFunctions);
+        const timerId = generateUniqueNumber(scheduledTimeoutFunctions);
 
         scheduledTimeoutFunctions.set(timerId, func);
 
