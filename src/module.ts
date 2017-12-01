@@ -1,6 +1,6 @@
 import { IClearRequest, ISetNotification, IWorkerEvent, TTimerType } from 'worker-timers-worker';
-import { isCallNotification } from './guards/call-notification';
-import { isClearResponse } from './guards/clear-response';
+import { isCallNotification } from './guards/call-notification';
+import { isClearResponse } from './guards/clear-response';
 
 const MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER || Math.pow(2, 53) - 1;
 
@@ -16,7 +16,7 @@ const generateUniqueId = (map: Map<number, any>) => {
 
 export const load = (url: string) => {
     const scheduledIntervalFunctions: Map<number, number | Function> = new Map();
-    const scheduledTimeoutFunctions: Map<number, number | Function> = new Map();
+    const scheduledTimeoutFunctions: Map<number, number | Function> = new Map();
     const unrespondedRequests: Map<number, { timerId: number, timerType: TTimerType }> = new Map();
 
     const worker = new Worker(url);
@@ -81,7 +81,6 @@ export const load = (url: string) => {
                 }
             }
         } else {
-            console.log(data);
             const { error: { message } } = data;
 
             throw new Error(message);
