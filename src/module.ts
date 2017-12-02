@@ -1,4 +1,4 @@
-import { generateUniqueNumber } from 'fast-unique-numbers';
+import { generateUniqueNumber } from 'fast-unique-numbers';
 import { IClearRequest, ISetNotification, IWorkerEvent, TTimerType } from 'worker-timers-worker';
 import { isCallNotification } from './guards/call-notification';
 import { isClearResponse } from './guards/clear-response';
