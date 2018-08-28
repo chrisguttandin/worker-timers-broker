@@ -65,8 +65,11 @@ describe('module', () => {
                 self.postMessage(data);
             });`
         ], { type: 'application/javascript' });
+        const url = URL.createObjectURL(blob);
 
-        workerTimers = load(URL.createObjectURL(blob));
+        workerTimers = load(url);
+
+        URL.revokeObjectURL(url);
     });
 
     describe('clearInterval()', () => {
