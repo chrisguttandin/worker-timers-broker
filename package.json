@@ -57,9 +57,8 @@
     "webpack": "^4.20.2"
   },
   "files": [
-    "build/es2015/",
+    "build/es2018/",
     "build/es5/",
-    "build/esm/",
     "src/"
   ],
   "homepage": "https://github.com/chrisguttandin/worker-timers-broker",
@@ -71,7 +70,7 @@
   },
   "license": "MIT",
   "main": "build/es5/bundle.js",
-  "module": "build/esm/module.js",
+  "module": "build/es2018/module.js",
   "name": "worker-timers-broker",
   "repository": {
     "type": "git",
@@ -81,6 +80,6 @@
     "prepublishOnly": "grunt build",
     "test": "grunt lint && grunt test"
   },
-  "types": "build/es2015/module.d.ts",
+  "types": "build/es2018/module.d.ts",
   "version": "4.0.36"
 }
