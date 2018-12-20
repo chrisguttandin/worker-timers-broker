@@ -6,7 +6,7 @@ import { isClearResponse } from './guards/clear-response';
 export const load = (url: string) => {
     const scheduledIntervalFunctions: Map<number, number | Function> = new Map();
     const scheduledTimeoutFunctions: Map<number, number | Function> = new Map();
-    const unrespondedRequests: Map<number, { timerId: number, timerType: TTimerType }> = new Map();
+    const unrespondedRequests: Map<number, { timerId: number; timerType: TTimerType }> = new Map();
 
     const worker = new Worker(url);
 
