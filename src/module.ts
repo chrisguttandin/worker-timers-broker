@@ -58,16 +58,16 @@ export const load = (url: string) => {
 
             if (timerIdAndTimerType === undefined) {
                 throw new Error('The timer is in an undefined state.');
+            }
+
+            const { timerId, timerType } = timerIdAndTimerType;
+
+            unrespondedRequests.delete(id);
+
+            if (timerType === 'interval') {
+                scheduledIntervalFunctions.delete(timerId);
             } else {
-                const { timerId, timerType } = timerIdAndTimerType;
-
-                unrespondedRequests.delete(id);
-
-                if (timerType === 'interval') {
-                    scheduledIntervalFunctions.delete(timerId);
-                } else {
-                    scheduledTimeoutFunctions.delete(timerId);
-                }
+                scheduledTimeoutFunctions.delete(timerId);
             }
         } else {
             const { error: { message } } = data;
