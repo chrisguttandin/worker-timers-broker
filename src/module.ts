@@ -4,8 +4,9 @@ import { isCallNotification } from './guards/call-notification';
 import { isClearResponse } from './guards/clear-response';
 
 export const load = (url: string) => {
-    const scheduledIntervalFunctions: Map<number, number | Function> = new Map();
-    const scheduledTimeoutFunctions: Map<number, number | Function> = new Map();
+    // Prefilling the Maps with a function indexed by zero is necessary to be compliant with the specification.
+    const scheduledIntervalFunctions: Map<number, number | Function> = new Map([ [ 0, () => { } ] ]); // tslint:disable-line no-empty
+    const scheduledTimeoutFunctions: Map<number, number | Function> = new Map([ [ 0, () => { } ] ]); // tslint:disable-line no-empty
     const unrespondedRequests: Map<number, { timerId: number; timerType: TTimerType }> = new Map();
 
     const worker = new Worker(url);

@@ -151,6 +151,12 @@ describe('module', () => {
             expect(id).to.be.a('number');
         });
 
+        it('should return a value which is greater than zero', () => {
+            id = workerTimers.setInterval(() => {}, 0);
+
+            expect(id).to.be.above(0);
+        });
+
         it('should send the correct scheduling message', function (done) {
             this.timeout(4000);
 
@@ -192,6 +198,12 @@ describe('module', () => {
             id = workerTimers.setTimeout(() => {}, 0);
 
             expect(id).to.be.a('number');
+        });
+
+        it('should return a value which is greater than zero', () => {
+            id = workerTimers.setTimeout(() => {}, 0);
+
+            expect(id).to.be.above(0);
         });
 
         it('should send the correct scheduling message', function (done) {
