@@ -5,15 +5,17 @@ import { isClearResponse } from './guards/clear-response';
 
 export const load = (url: string) => {
     // Prefilling the Maps with a function indexed by zero is necessary to be compliant with the specification.
-    const scheduledIntervalFunctions: Map<number, number | Function> = new Map([ [ 0, () => { } ] ]); // tslint:disable-line no-empty
-    const scheduledTimeoutFunctions: Map<number, number | Function> = new Map([ [ 0, () => { } ] ]); // tslint:disable-line no-empty
+    const scheduledIntervalFunctions: Map<number, number | Function> = new Map([[0, () => {}]]); // tslint:disable-line no-empty
+    const scheduledTimeoutFunctions: Map<number, number | Function> = new Map([[0, () => {}]]); // tslint:disable-line no-empty
     const unrespondedRequests: Map<number, { timerId: number; timerType: TTimerType }> = new Map();
 
     const worker = new Worker(url);
 
     worker.addEventListener('message', ({ data }: IWorkerEvent) => {
         if (isCallNotification(data)) {
-            const { params: { timerId, timerType } } = data;
+            const {
+                params: { timerId, timerType }
+            } = data;
 
             if (timerType === 'interval') {
                 const idOrFunc = scheduledIntervalFunctions.get(timerId);
@@ -21,9 +23,11 @@ export const load = (url: string) => {
                 if (typeof idOrFunc === 'number') {
                     const timerIdAndTimerType = unrespondedRequests.get(idOrFunc);
 
-                    if (timerIdAndTimerType === undefined
-                            || timerIdAndTimerType.timerId !== timerId
-                            || timerIdAndTimerType.timerType !== timerType) {
+                    if (
+                        timerIdAndTimerType === undefined ||
+                        timerIdAndTimerType.timerId !== timerId ||
+                        timerIdAndTimerType.timerType !== timerType
+                    ) {
                         throw new Error('The timer is in an undefined state.');
                     }
                 } else if (typeof idOrFunc !== 'undefined') {
@@ -31,16 +35,17 @@ export const load = (url: string) => {
                 } else {
                     throw new Error('The timer is in an undefined state.');
                 }
-
             } else if (timerType === 'timeout') {
                 const idOrFunc = scheduledTimeoutFunctions.get(timerId);
 
                 if (typeof idOrFunc === 'number') {
                     const timerIdAndTimerType = unrespondedRequests.get(idOrFunc);
 
-                    if (timerIdAndTimerType === undefined
-                            || timerIdAndTimerType.timerId !== timerId
-                            || timerIdAndTimerType.timerType !== timerType) {
+                    if (
+                        timerIdAndTimerType === undefined ||
+                        timerIdAndTimerType.timerId !== timerId ||
+                        timerIdAndTimerType.timerType !== timerType
+                    ) {
                         throw new Error('The timer is in an undefined state.');
                     }
                 } else if (typeof idOrFunc !== 'undefined') {
@@ -71,7 +76,9 @@ export const load = (url: string) => {
                 scheduledTimeoutFunctions.delete(timerId);
             }
         } else {
-            const { error: { message } } = data;
+            const {
+                error: { message }
+            } = data;
 
             throw new Error(message);
         }
@@ -83,7 +90,7 @@ export const load = (url: string) => {
         unrespondedRequests.set(id, { timerId, timerType: 'interval' });
         scheduledIntervalFunctions.set(timerId, id);
 
-        worker.postMessage(<IClearRequest> {
+        worker.postMessage(<IClearRequest>{
             id,
             method: 'clear',
             params: { timerId, timerType: 'interval' }
@@ -96,7 +103,7 @@ export const load = (url: string) => {
         unrespondedRequests.set(id, { timerId, timerType: 'timeout' });
         scheduledTimeoutFunctions.set(timerId, id);
 
-        worker.postMessage(<IClearRequest> {
+        worker.postMessage(<IClearRequest>{
             id,
             method: 'clear',
             params: { timerId, timerType: 'timeout' }
@@ -111,7 +118,7 @@ export const load = (url: string) => {
 
             // Doublecheck if the interval should still be rescheduled because it could have been cleared inside of func().
             if (typeof scheduledIntervalFunctions.get(timerId) === 'function') {
-                worker.postMessage(<ISetNotification> {
+                worker.postMessage(<ISetNotification>{
                     id: null,
                     method: 'set',
                     params: {
@@ -124,7 +131,7 @@ export const load = (url: string) => {
             }
         });
 
-        worker.postMessage(<ISetNotification> {
+        worker.postMessage(<ISetNotification>{
             id: null,
             method: 'set',
             params: {
@@ -143,7 +150,7 @@ export const load = (url: string) => {
 
         scheduledTimeoutFunctions.set(timerId, func);
 
-        worker.postMessage(<ISetNotification> {
+        worker.postMessage(<ISetNotification>{
             id: null,
             method: 'set',
             params: {
