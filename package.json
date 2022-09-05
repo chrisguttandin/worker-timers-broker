@@ -12,7 +12,7 @@
         "@babel/runtime": "^7.19.0",
         "fast-unique-numbers": "^6.0.19",
         "tslib": "^2.4.0",
-        "worker-timers-worker": "^7.0.40"
+        "worker-timers-worker": "^7.0.41"
     },
     "description": "The broker which is used by the worker-timers package.",
     "devDependencies": {
