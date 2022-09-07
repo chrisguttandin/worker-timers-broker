@@ -10,7 +10,7 @@
     },
     "dependencies": {
         "@babel/runtime": "^7.19.0",
-        "fast-unique-numbers": "^6.0.20",
+        "fast-unique-numbers": "^6.0.21",
         "tslib": "^2.4.0",
         "worker-timers-worker": "^7.0.42"
     },
