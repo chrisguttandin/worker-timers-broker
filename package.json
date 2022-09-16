@@ -16,7 +16,7 @@
     },
     "description": "The broker which is used by the worker-timers package.",
     "devDependencies": {
-        "@babel/core": "^7.19.0",
+        "@babel/core": "^7.19.1",
         "@babel/plugin-external-helpers": "^7.18.6",
         "@babel/plugin-transform-runtime": "^7.18.10",
         "@babel/preset-env": "^7.19.0",
