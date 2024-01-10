@@ -170,8 +170,6 @@ describe('module', () => {
                 } catch (err) {
                     // This might happen if we catch the first message as well.
                 }
-
-                done();
             });
 
             id = workerTimers.setInterval(() => {}, delay);
@@ -237,8 +235,6 @@ describe('module', () => {
                 } catch (err) {
                     // This might happen if we catch the first message as well.
                 }
-
-                done();
             });
 
             id = workerTimers.setTimeout(() => {}, delay);
