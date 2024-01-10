@@ -176,6 +176,26 @@ describe('module', () => {
 
             id = workerTimers.setInterval(() => {}, delay);
         });
+
+        it('should send the correct scheduling message when omitting the delay', function (done) {
+            this.timeout(4000);
+
+            Worker.addEventListener(0, 'message', ({ data }) => {
+                try {
+                    expect(data).to.deep.equal({
+                        id: null,
+                        method: 'set',
+                        params: { delay: 0, now, timerId: id, timerType: 'interval' }
+                    });
+
+                    done();
+                } catch (err) {
+                    // This might happen if we catch the first message as well.
+                }
+            });
+
+            id = workerTimers.setInterval(() => {});
+        });
     });
 
     describe('setTimeout()', () => {
@@ -222,6 +242,26 @@ describe('module', () => {
             });
 
             id = workerTimers.setTimeout(() => {}, delay);
+        });
+
+        it('should send the correct scheduling message when omitting the delay', function (done) {
+            this.timeout(4000);
+
+            Worker.addEventListener(0, 'message', ({ data }) => {
+                try {
+                    expect(data).to.deep.equal({
+                        id: null,
+                        method: 'set',
+                        params: { delay: 0, now, timerId: id, timerType: 'timeout' }
+                    });
+
+                    done();
+                } catch (err) {
+                    // This might happen if we catch the first message as well.
+                }
+            });
+
+            id = workerTimers.setTimeout(() => {});
         });
     });
 });

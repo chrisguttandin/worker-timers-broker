@@ -110,7 +110,7 @@ export const load = (url: string) => {
         });
     };
 
-    const setInterval = (func: Function, delay: number) => {
+    const setInterval = (func: Function, delay = 0) => {
         const timerId = generateUniqueNumber(scheduledIntervalFunctions);
 
         scheduledIntervalFunctions.set(timerId, () => {
@@ -145,7 +145,7 @@ export const load = (url: string) => {
         return timerId;
     };
 
-    const setTimeout = (func: Function, delay: number) => {
+    const setTimeout = (func: Function, delay = 0) => {
         const timerId = generateUniqueNumber(scheduledTimeoutFunctions);
 
         scheduledTimeoutFunctions.set(timerId, func);
