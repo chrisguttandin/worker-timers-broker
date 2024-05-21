@@ -131,7 +131,7 @@ export const load = (url: string) => {
                     method: 'set',
                     params: {
                         delay,
-                        now: performance.now(),
+                        now: performance.timeOrigin + performance.now(),
                         timerId,
                         timerType: 'interval'
                     }
@@ -144,7 +144,7 @@ export const load = (url: string) => {
             method: 'set',
             params: {
                 delay,
-                now: performance.now(),
+                now: performance.timeOrigin + performance.now(),
                 timerId,
                 timerType: 'interval'
             }
@@ -163,7 +163,7 @@ export const load = (url: string) => {
             method: 'set',
             params: {
                 delay,
-                now: performance.now(),
+                now: performance.timeOrigin + performance.now(),
                 timerId,
                 timerType: 'timeout'
             }

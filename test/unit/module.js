@@ -2,6 +2,7 @@ import { load } from '../../src/module';
 
 describe('module', () => {
     let now;
+    let timeOrigin;
     let workerTimers;
 
     afterEach(() => {
@@ -12,6 +13,7 @@ describe('module', () => {
 
     beforeEach(() => {
         now = performance.now();
+        timeOrigin = performance.timeOrigin;
 
         // eslint-disable-next-line no-global-assign
         performance = ((originalPerformance) => {
@@ -21,7 +23,8 @@ describe('module', () => {
                 },
                 reset: () => {
                     performance = originalPerformance; // eslint-disable-line no-global-assign
-                }
+                },
+                timeOrigin
             };
         })(performance);
 
@@ -190,7 +193,7 @@ describe('module', () => {
                     expect(data).to.deep.equal({
                         id: null,
                         method: 'set',
-                        params: { delay, now, timerId: id, timerType: 'interval' }
+                        params: { delay, now: timeOrigin + now, timerId: id, timerType: 'interval' }
                     });
 
                     done();
@@ -210,7 +213,7 @@ describe('module', () => {
                     expect(data).to.deep.equal({
                         id: null,
                         method: 'set',
-                        params: { delay: 0, now, timerId: id, timerType: 'interval' }
+                        params: { delay: 0, now: timeOrigin + now, timerId: id, timerType: 'interval' }
                     });
 
                     done();
@@ -255,7 +258,7 @@ describe('module', () => {
                     expect(data).to.deep.equal({
                         id: null,
                         method: 'set',
-                        params: { delay, now, timerId: id, timerType: 'timeout' }
+                        params: { delay, now: timeOrigin + now, timerId: id, timerType: 'timeout' }
                     });
 
                     done();
@@ -275,7 +278,7 @@ describe('module', () => {
                     expect(data).to.deep.equal({
                         id: null,
                         method: 'set',
-                        params: { delay: 0, now, timerId: id, timerType: 'timeout' }
+                        params: { delay: 0, now: timeOrigin + now, timerId: id, timerType: 'timeout' }
                     });
 
                     done();
