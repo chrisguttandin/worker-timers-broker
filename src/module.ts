@@ -85,6 +85,10 @@ export const load = (url: string) => {
     });
 
     const clearInterval = (timerId: number) => {
+        if (typeof scheduledIntervalFunctions.get(timerId) !== 'function') {
+            throw new Error(`There is no interval scheduled with the given id "${timerId}".`);
+        }
+
         const id = generateUniqueNumber(unrespondedRequests);
 
         unrespondedRequests.set(id, { timerId, timerType: 'interval' });
@@ -98,6 +102,10 @@ export const load = (url: string) => {
     };
 
     const clearTimeout = (timerId: number) => {
+        if (typeof scheduledTimeoutFunctions.get(timerId) !== 'function') {
+            throw new Error(`There is no timeout scheduled with the given id "${timerId}".`);
+        }
+
         const id = generateUniqueNumber(unrespondedRequests);
 
         unrespondedRequests.set(id, { timerId, timerType: 'timeout' });

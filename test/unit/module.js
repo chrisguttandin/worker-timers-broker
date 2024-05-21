@@ -101,6 +101,21 @@ describe('module', () => {
 
             workerTimers.clearInterval(id);
         });
+
+        it('should send no message when attempting to clear an unscheduled interval', (done) => {
+            Worker.addEventListener(0, 'message', ({ data }) => {
+                if (data.method === 'clear') {
+                    done(new Error('This should never be called.'));
+                }
+            });
+
+            expect(() => workerTimers.clearInterval(id + 1)).to.throw(
+                Error,
+                `There is no interval scheduled with the given id "${id + 1}".`
+            );
+
+            setTimeout(done, 1000);
+        });
     });
 
     describe('clearTimeout()', () => {
@@ -128,6 +143,18 @@ describe('module', () => {
             });
 
             workerTimers.clearTimeout(id);
+        });
+
+        it('should send no message when attempting to clear an unscheduled timeout', (done) => {
+            Worker.addEventListener(0, 'message', ({ data }) => {
+                if (data.method === 'clear') {
+                    done(new Error('This should never be called.'));
+                }
+            });
+
+            expect(() => workerTimers.clearTimeout(id + 1)).to.throw(Error, `There is no timeout scheduled with the given id "${id + 1}".`);
+
+            setTimeout(done, 1000);
         });
     });
 
