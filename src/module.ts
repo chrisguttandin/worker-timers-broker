@@ -20,6 +20,10 @@ export const load = (url: string) => {
             if (timerType === 'interval') {
                 const idOrFunc = scheduledIntervalFunctions.get(timerId);
 
+                if (typeof idOrFunc === undefined) {
+                    throw new Error('The timer is in an undefined state.');
+                }
+
                 if (typeof idOrFunc === 'number') {
                     const timerIdAndTimerType = unrespondedRequests.get(idOrFunc);
 
@@ -30,14 +34,16 @@ export const load = (url: string) => {
                     ) {
                         throw new Error('The timer is in an undefined state.');
                     }
-                } else if (typeof idOrFunc !== 'undefined') {
+                } else if (typeof idOrFunc === 'function') {
                     idOrFunc();
-                } else {
-                    throw new Error('The timer is in an undefined state.');
                 }
             } else if (timerType === 'timeout') {
                 const idOrFunc = scheduledTimeoutFunctions.get(timerId);
 
+                if (typeof idOrFunc === undefined) {
+                    throw new Error('The timer is in an undefined state.');
+                }
+
                 if (typeof idOrFunc === 'number') {
                     const timerIdAndTimerType = unrespondedRequests.get(idOrFunc);
 
@@ -48,13 +54,11 @@ export const load = (url: string) => {
                     ) {
                         throw new Error('The timer is in an undefined state.');
                     }
-                } else if (typeof idOrFunc !== 'undefined') {
+                } else if (typeof idOrFunc === 'function') {
                     idOrFunc();
 
                     // A timeout can be savely deleted because it is only called once.
                     scheduledTimeoutFunctions.delete(timerId);
-                } else {
-                    throw new Error('The timer is in an undefined state.');
                 }
             }
         } else if (isClearResponse(data)) {
@@ -85,37 +89,33 @@ export const load = (url: string) => {
     });
 
     const clearInterval = (timerId: number) => {
-        if (typeof scheduledIntervalFunctions.get(timerId) !== 'function') {
-            throw new Error(`There is no interval scheduled with the given id "${timerId}".`);
+        if (typeof scheduledIntervalFunctions.get(timerId) === 'function') {
+            const id = generateUniqueNumber(unrespondedRequests);
+
+            unrespondedRequests.set(id, { timerId, timerType: 'interval' });
+            scheduledIntervalFunctions.set(timerId, id);
+
+            worker.postMessage(<IClearRequest>{
+                id,
+                method: 'clear',
+                params: { timerId, timerType: 'interval' }
+            });
         }
-
-        const id = generateUniqueNumber(unrespondedRequests);
-
-        unrespondedRequests.set(id, { timerId, timerType: 'interval' });
-        scheduledIntervalFunctions.set(timerId, id);
-
-        worker.postMessage(<IClearRequest>{
-            id,
-            method: 'clear',
-            params: { timerId, timerType: 'interval' }
-        });
     };
 
     const clearTimeout = (timerId: number) => {
-        if (typeof scheduledTimeoutFunctions.get(timerId) !== 'function') {
-            throw new Error(`There is no timeout scheduled with the given id "${timerId}".`);
+        if (typeof scheduledTimeoutFunctions.get(timerId) === 'function') {
+            const id = generateUniqueNumber(unrespondedRequests);
+
+            unrespondedRequests.set(id, { timerId, timerType: 'timeout' });
+            scheduledTimeoutFunctions.set(timerId, id);
+
+            worker.postMessage(<IClearRequest>{
+                id,
+                method: 'clear',
+                params: { timerId, timerType: 'timeout' }
+            });
         }
-
-        const id = generateUniqueNumber(unrespondedRequests);
-
-        unrespondedRequests.set(id, { timerId, timerType: 'timeout' });
-        scheduledTimeoutFunctions.set(timerId, id);
-
-        worker.postMessage(<IClearRequest>{
-            id,
-            method: 'clear',
-            params: { timerId, timerType: 'timeout' }
-        });
     };
 
     const setInterval = (func: Function, delay = 0) => {

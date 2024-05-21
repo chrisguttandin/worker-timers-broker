@@ -112,10 +112,7 @@ describe('module', () => {
                 }
             });
 
-            expect(() => workerTimers.clearInterval(id + 1)).to.throw(
-                Error,
-                `There is no interval scheduled with the given id "${id + 1}".`
-            );
+            workerTimers.clearInterval(id + 1);
 
             setTimeout(done, 1000);
         });
@@ -155,7 +152,7 @@ describe('module', () => {
                 }
             });
 
-            expect(() => workerTimers.clearTimeout(id + 1)).to.throw(Error, `There is no timeout scheduled with the given id "${id + 1}".`);
+            workerTimers.clearTimeout(id + 1);
 
             setTimeout(done, 1000);
         });
