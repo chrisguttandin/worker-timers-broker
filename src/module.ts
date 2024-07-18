@@ -118,11 +118,11 @@ export const load = (url: string) => {
         }
     };
 
-    const setInterval = (func: Function, delay = 0) => {
+    const setInterval = (func: Function, delay = 0, ...args: any[]) => {
         const timerId = generateUniqueNumber(scheduledIntervalFunctions);
 
         scheduledIntervalFunctions.set(timerId, () => {
-            func();
+            func(...args);
 
             // Doublecheck if the interval should still be rescheduled because it could have been cleared inside of func().
             if (typeof scheduledIntervalFunctions.get(timerId) === 'function') {
@@ -153,10 +153,10 @@ export const load = (url: string) => {
         return timerId;
     };
 
-    const setTimeout = (func: Function, delay = 0) => {
+    const setTimeout = (func: Function, delay = 0, ...args: any[]) => {
         const timerId = generateUniqueNumber(scheduledTimeoutFunctions);
 
-        scheduledTimeoutFunctions.set(timerId, func);
+        scheduledTimeoutFunctions.set(timerId, () => func(...args));
 
         worker.postMessage(<ISetNotification>{
             id: null,
