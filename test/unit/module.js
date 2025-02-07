@@ -187,8 +187,10 @@ describe('module', () => {
 
             Worker.addEventListener(0, 'message', ({ data }) => {
                 try {
+                    expect(data.id).to.be.a('number');
+
                     expect(data).to.deep.equal({
-                        id: null,
+                        id: data.id,
                         method: 'set',
                         params: { delay, now: timeOrigin + now, timerId: id, timerType: 'interval' }
                     });
@@ -207,8 +209,10 @@ describe('module', () => {
 
             Worker.addEventListener(0, 'message', ({ data }) => {
                 try {
+                    expect(data.id).to.be.a('number');
+
                     expect(data).to.deep.equal({
-                        id: null,
+                        id: data.id,
                         method: 'set',
                         params: { delay: 0, now: timeOrigin + now, timerId: id, timerType: 'interval' }
                     });
@@ -252,8 +256,10 @@ describe('module', () => {
 
             Worker.addEventListener(0, 'message', ({ data }) => {
                 try {
+                    expect(data.id).to.be.a('number');
+
                     expect(data).to.deep.equal({
-                        id: null,
+                        id: data.id,
                         method: 'set',
                         params: { delay, now: timeOrigin + now, timerId: id, timerType: 'timeout' }
                     });
@@ -272,8 +278,10 @@ describe('module', () => {
 
             Worker.addEventListener(0, 'message', ({ data }) => {
                 try {
+                    expect(data.id).to.be.a('number');
+
                     expect(data).to.deep.equal({
-                        id: null,
+                        id: data.id,
                         method: 'set',
                         params: { delay: 0, now: timeOrigin + now, timerId: id, timerType: 'timeout' }
                     });

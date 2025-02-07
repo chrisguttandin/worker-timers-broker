@@ -1,7 +1,7 @@
 import { generateUniqueNumber } from 'fast-unique-numbers';
-import { IClearRequest, ISetNotification, IWorkerEvent, TTimerType } from 'worker-timers-worker';
-import { isCallNotification } from './guards/call-notification';
+import { IClearRequest, ISetRequest, IWorkerEvent, TTimerType } from 'worker-timers-worker';
 import { isClearResponse } from './guards/clear-response';
+import { isSetResponse } from './guards/set-response';
 
 export const load = (url: string) => {
     // Prefilling the Maps with a function indexed by zero is necessary to be compliant with the specification.
@@ -12,53 +12,57 @@ export const load = (url: string) => {
     const worker = new Worker(url);
 
     worker.addEventListener('message', ({ data }: IWorkerEvent) => {
-        if (isCallNotification(data)) {
-            const {
-                params: { timerId, timerType }
-            } = data;
+        if (isSetResponse(data)) {
+            const { id, result } = data;
 
-            if (timerType === 'interval') {
-                const idOrFunc = scheduledIntervalFunctions.get(timerId);
+            unrespondedRequests.delete(id);
 
-                if (typeof idOrFunc === undefined) {
-                    throw new Error('The timer is in an undefined state.');
-                }
+            if (result !== null) {
+                const { timerId, timerType } = result;
 
-                if (typeof idOrFunc === 'number') {
-                    const timerIdAndTimerType = unrespondedRequests.get(idOrFunc);
+                if (timerType === 'interval') {
+                    const idOrFunc = scheduledIntervalFunctions.get(timerId);
 
-                    if (
-                        timerIdAndTimerType === undefined ||
-                        timerIdAndTimerType.timerId !== timerId ||
-                        timerIdAndTimerType.timerType !== timerType
-                    ) {
+                    if (typeof idOrFunc === undefined) {
                         throw new Error('The timer is in an undefined state.');
                     }
-                } else if (typeof idOrFunc === 'function') {
-                    idOrFunc();
-                }
-            } else if (timerType === 'timeout') {
-                const idOrFunc = scheduledTimeoutFunctions.get(timerId);
 
-                if (typeof idOrFunc === undefined) {
-                    throw new Error('The timer is in an undefined state.');
-                }
+                    if (typeof idOrFunc === 'number') {
+                        const timerIdAndTimerType = unrespondedRequests.get(idOrFunc);
 
-                if (typeof idOrFunc === 'number') {
-                    const timerIdAndTimerType = unrespondedRequests.get(idOrFunc);
+                        if (
+                            timerIdAndTimerType === undefined ||
+                            timerIdAndTimerType.timerId !== timerId ||
+                            timerIdAndTimerType.timerType !== timerType
+                        ) {
+                            throw new Error('The timer is in an undefined state.');
+                        }
+                    } else if (typeof idOrFunc === 'function') {
+                        idOrFunc();
+                    }
+                } else if (timerType === 'timeout') {
+                    const idOrFunc = scheduledTimeoutFunctions.get(timerId);
 
-                    if (
-                        timerIdAndTimerType === undefined ||
-                        timerIdAndTimerType.timerId !== timerId ||
-                        timerIdAndTimerType.timerType !== timerType
-                    ) {
+                    if (typeof idOrFunc === undefined) {
                         throw new Error('The timer is in an undefined state.');
                     }
-                } else if (typeof idOrFunc === 'function') {
-                    idOrFunc();
 
-                    // A timeout can be savely deleted because it is only called once.
-                    scheduledTimeoutFunctions.delete(timerId);
+                    if (typeof idOrFunc === 'number') {
+                        const timerIdAndTimerType = unrespondedRequests.get(idOrFunc);
+
+                        if (
+                            timerIdAndTimerType === undefined ||
+                            timerIdAndTimerType.timerId !== timerId ||
+                            timerIdAndTimerType.timerType !== timerType
+                        ) {
+                            throw new Error('The timer is in an undefined state.');
+                        }
+                    } else if (typeof idOrFunc === 'function') {
+                        idOrFunc();
+
+                        // A timeout can be savely deleted because it is only called once.
+                        scheduledTimeoutFunctions.delete(timerId);
+                    }
                 }
             }
         } else if (isClearResponse(data)) {
@@ -126,8 +130,8 @@ export const load = (url: string) => {
 
             // Doublecheck if the interval should still be rescheduled because it could have been cleared inside of func().
             if (typeof scheduledIntervalFunctions.get(timerId) === 'function') {
-                worker.postMessage(<ISetNotification>{
-                    id: null,
+                worker.postMessage(<ISetRequest>{
+                    id: generateUniqueNumber(unrespondedRequests),
                     method: 'set',
                     params: {
                         delay,
@@ -139,8 +143,8 @@ export const load = (url: string) => {
             }
         });
 
-        worker.postMessage(<ISetNotification>{
-            id: null,
+        worker.postMessage(<ISetRequest>{
+            id: generateUniqueNumber(unrespondedRequests),
             method: 'set',
             params: {
                 delay,
@@ -158,8 +162,8 @@ export const load = (url: string) => {
 
         scheduledTimeoutFunctions.set(timerId, () => func(...args));
 
-        worker.postMessage(<ISetNotification>{
-            id: null,
+        worker.postMessage(<ISetRequest>{
+            id: generateUniqueNumber(unrespondedRequests),
             method: 'set',
             params: {
                 delay,
