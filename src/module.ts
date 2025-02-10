@@ -1,185 +1,112 @@
+import { createBroker } from 'broker-factory';
 import { generateUniqueNumber } from 'fast-unique-numbers';
-import { IClearRequest, ISetRequest, IWorkerEvent, TTimerType } from 'worker-timers-worker';
-import { isClearResponse } from './guards/clear-response';
-import { isSetResponse } from './guards/set-response';
+import { TWorkerTimersWorkerDefinition } from 'worker-timers-worker';
+import { IWorkerTimersBrokerDefinition } from './interfaces';
+import { TWorkerTimersBrokerLoader, TWorkerTimersBrokerWrapper } from './types';
 
-export const load = (url: string) => {
-    // Prefilling the Maps with a function indexed by zero is necessary to be compliant with the specification.
-    const scheduledIntervalFunctions: Map<number, number | Function> = new Map([[0, () => {}]]); // tslint:disable-line no-empty
-    const scheduledTimeoutFunctions: Map<number, number | Function> = new Map([[0, () => {}]]); // tslint:disable-line no-empty
-    const unrespondedRequests: Map<number, { timerId: number; timerType: TTimerType }> = new Map();
+/*
+ * @todo Explicitly referencing the barrel file seems to be necessary when enabling the
+ * isolatedModules compiler option.
+ */
+export * from './interfaces/index';
+export * from './types/index';
 
-    const worker = new Worker(url);
+// Prefilling the Maps with a function indexed by zero is necessary to be compliant with the specification.
+const scheduledIntervalsState: Map<number, null | symbol> = new Map([[0, null]]); // tslint:disable-line no-empty
+const scheduledTimeoutsState: Map<number, null | symbol> = new Map([[0, null]]); // tslint:disable-line no-empty
 
-    worker.addEventListener('message', ({ data }: IWorkerEvent) => {
-        if (isSetResponse(data)) {
-            const { id, result } = data;
+export const wrap: TWorkerTimersBrokerWrapper = createBroker<IWorkerTimersBrokerDefinition, TWorkerTimersWorkerDefinition>({
+    clearInterval: ({ call }) => {
+        return (timerId) => {
+            if (typeof scheduledIntervalsState.get(timerId) === 'symbol') {
+                scheduledIntervalsState.set(timerId, null);
 
-            unrespondedRequests.delete(id);
-
-            if (result !== null) {
-                const { timerId, timerType } = result;
-
-                if (timerType === 'interval') {
-                    const idOrFunc = scheduledIntervalFunctions.get(timerId);
-
-                    if (typeof idOrFunc === undefined) {
-                        throw new Error('The timer is in an undefined state.');
-                    }
-
-                    if (typeof idOrFunc === 'number') {
-                        const timerIdAndTimerType = unrespondedRequests.get(idOrFunc);
-
-                        if (
-                            timerIdAndTimerType === undefined ||
-                            timerIdAndTimerType.timerId !== timerId ||
-                            timerIdAndTimerType.timerType !== timerType
-                        ) {
-                            throw new Error('The timer is in an undefined state.');
-                        }
-                    } else if (typeof idOrFunc === 'function') {
-                        idOrFunc();
-                    }
-                } else if (timerType === 'timeout') {
-                    const idOrFunc = scheduledTimeoutFunctions.get(timerId);
-
-                    if (typeof idOrFunc === undefined) {
-                        throw new Error('The timer is in an undefined state.');
-                    }
-
-                    if (typeof idOrFunc === 'number') {
-                        const timerIdAndTimerType = unrespondedRequests.get(idOrFunc);
-
-                        if (
-                            timerIdAndTimerType === undefined ||
-                            timerIdAndTimerType.timerId !== timerId ||
-                            timerIdAndTimerType.timerType !== timerType
-                        ) {
-                            throw new Error('The timer is in an undefined state.');
-                        }
-                    } else if (typeof idOrFunc === 'function') {
-                        idOrFunc();
-
-                        // A timeout can be savely deleted because it is only called once.
-                        scheduledTimeoutFunctions.delete(timerId);
-                    }
-                }
-            }
-        } else if (isClearResponse(data)) {
-            const { id } = data;
-
-            const timerIdAndTimerType = unrespondedRequests.get(id);
-
-            if (timerIdAndTimerType === undefined) {
-                throw new Error('The timer is in an undefined state.');
-            }
-
-            const { timerId, timerType } = timerIdAndTimerType;
-
-            unrespondedRequests.delete(id);
-
-            if (timerType === 'interval') {
-                scheduledIntervalFunctions.delete(timerId);
-            } else {
-                scheduledTimeoutFunctions.delete(timerId);
-            }
-        } else {
-            const {
-                error: { message }
-            } = data;
-
-            throw new Error(message);
-        }
-    });
-
-    const clearInterval = (timerId: number) => {
-        if (typeof scheduledIntervalFunctions.get(timerId) === 'function') {
-            const id = generateUniqueNumber(unrespondedRequests);
-
-            unrespondedRequests.set(id, { timerId, timerType: 'interval' });
-            scheduledIntervalFunctions.set(timerId, id);
-
-            worker.postMessage(<IClearRequest>{
-                id,
-                method: 'clear',
-                params: { timerId, timerType: 'interval' }
-            });
-        }
-    };
-
-    const clearTimeout = (timerId: number) => {
-        if (typeof scheduledTimeoutFunctions.get(timerId) === 'function') {
-            const id = generateUniqueNumber(unrespondedRequests);
-
-            unrespondedRequests.set(id, { timerId, timerType: 'timeout' });
-            scheduledTimeoutFunctions.set(timerId, id);
-
-            worker.postMessage(<IClearRequest>{
-                id,
-                method: 'clear',
-                params: { timerId, timerType: 'timeout' }
-            });
-        }
-    };
-
-    const setInterval = (func: Function, delay = 0, ...args: any[]) => {
-        const timerId = generateUniqueNumber(scheduledIntervalFunctions);
-
-        scheduledIntervalFunctions.set(timerId, () => {
-            func(...args);
-
-            // Doublecheck if the interval should still be rescheduled because it could have been cleared inside of func().
-            if (typeof scheduledIntervalFunctions.get(timerId) === 'function') {
-                worker.postMessage(<ISetRequest>{
-                    id: generateUniqueNumber(unrespondedRequests),
-                    method: 'set',
-                    params: {
-                        delay,
-                        now: performance.timeOrigin + performance.now(),
-                        timerId,
-                        timerType: 'interval'
-                    }
+                call('clear', { timerId, timerType: 'interval' }).then(() => {
+                    scheduledIntervalsState.delete(timerId);
                 });
             }
-        });
+        };
+    },
+    clearTimeout: ({ call }) => {
+        return (timerId) => {
+            if (typeof scheduledTimeoutsState.get(timerId) === 'symbol') {
+                scheduledTimeoutsState.set(timerId, null);
 
-        worker.postMessage(<ISetRequest>{
-            id: generateUniqueNumber(unrespondedRequests),
-            method: 'set',
-            params: {
-                delay,
-                now: performance.timeOrigin + performance.now(),
-                timerId,
-                timerType: 'interval'
+                call('clear', { timerId, timerType: 'timeout' }).then(() => {
+                    scheduledTimeoutsState.delete(timerId);
+                });
             }
-        });
+        };
+    },
+    setInterval: ({ call }) => {
+        return (func: Function, delay = 0, ...args: any[]) => {
+            const symbol = Symbol();
+            const timerId = generateUniqueNumber(scheduledIntervalsState);
 
-        return timerId;
-    };
+            scheduledIntervalsState.set(timerId, symbol);
 
-    const setTimeout = (func: Function, delay = 0, ...args: any[]) => {
-        const timerId = generateUniqueNumber(scheduledTimeoutFunctions);
+            const schedule = () =>
+                call('set', {
+                    delay,
+                    now: performance.timeOrigin + performance.now(),
+                    timerId,
+                    timerType: 'interval'
+                }).then(() => {
+                    const state = scheduledIntervalsState.get(timerId);
 
-        scheduledTimeoutFunctions.set(timerId, () => func(...args));
+                    if (typeof state === undefined) {
+                        throw new Error('The timer is in an undefined state.');
+                    }
 
-        worker.postMessage(<ISetRequest>{
-            id: generateUniqueNumber(unrespondedRequests),
-            method: 'set',
-            params: {
+                    if (state === symbol) {
+                        func(...args);
+
+                        // Doublecheck if the interval should still be rescheduled because it could have been cleared inside of func().
+                        if (scheduledIntervalsState.get(timerId) === symbol) {
+                            schedule();
+                        }
+                    }
+                });
+
+            schedule();
+
+            return timerId;
+        };
+    },
+    setTimeout: ({ call }) => {
+        return (func: Function, delay = 0, ...args: any[]) => {
+            const symbol = Symbol();
+            const timerId = generateUniqueNumber(scheduledTimeoutsState);
+
+            scheduledTimeoutsState.set(timerId, symbol);
+
+            call('set', {
                 delay,
                 now: performance.timeOrigin + performance.now(),
                 timerId,
                 timerType: 'timeout'
-            }
-        });
+            }).then(() => {
+                const state = scheduledTimeoutsState.get(timerId);
 
-        return timerId;
-    };
+                if (typeof state === 'undefined') {
+                    throw new Error('The timer is in an undefined state.');
+                }
 
-    return {
-        clearInterval,
-        clearTimeout,
-        setInterval,
-        setTimeout
-    };
+                if (state === symbol) {
+                    // A timeout can be savely deleted because it is only called once.
+                    scheduledTimeoutsState.delete(timerId);
+
+                    func(...args);
+                }
+            });
+
+            return timerId;
+        };
+    }
+});
+
+export const load: TWorkerTimersBrokerLoader = (url: string) => {
+    const worker = new Worker(url);
+
+    return wrap(worker);
 };
