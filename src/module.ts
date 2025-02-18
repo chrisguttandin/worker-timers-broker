@@ -54,7 +54,7 @@ export const wrap: TWorkerTimersBrokerWrapper = createBroker<IWorkerTimersBroker
                 }).then(() => {
                     const state = scheduledIntervalsState.get(timerId);
 
-                    if (typeof state === undefined) {
+                    if (state === undefined) {
                         throw new Error('The timer is in an undefined state.');
                     }
 
@@ -88,7 +88,7 @@ export const wrap: TWorkerTimersBrokerWrapper = createBroker<IWorkerTimersBroker
             }).then(() => {
                 const state = scheduledTimeoutsState.get(timerId);
 
-                if (typeof state === 'undefined') {
+                if (state === undefined) {
                     throw new Error('The timer is in an undefined state.');
                 }
 
