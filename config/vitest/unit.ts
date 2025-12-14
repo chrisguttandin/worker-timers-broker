@@ -64,6 +64,7 @@ export default defineConfig({
                   ]
         },
         dir: 'test/unit/',
-        include: ['**/*.js']
+        include: ['**/*.js'],
+        setupFiles: ['config/vitest/unit-setup.ts']
     }
 });
