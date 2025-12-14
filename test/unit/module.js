@@ -1,3 +1,4 @@
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { load } from '../../src/module';
 
 describe('module', () => {
@@ -85,7 +86,9 @@ describe('module', () => {
             id = workerTimers.setInterval(() => {}, 100);
         });
 
-        it('should send the correct clearing message', (done) => {
+        it('should send the correct clearing message', () => {
+            const { promise, resolve } = Promise.withResolvers();
+
             Worker.addEventListener(0, 'message', ({ data }) => {
                 try {
                     expect(data.id).to.be.a('number');
@@ -96,25 +99,31 @@ describe('module', () => {
                         params: { timerId: id, timerType: 'interval' }
                     });
 
-                    done();
+                    resolve();
                 } catch (err) {
                     // This might happen if we catch the first message as well.
                 }
             });
 
             workerTimers.clearInterval(id);
+
+            return promise;
         });
 
-        it('should send no message when attempting to clear an unscheduled interval', (done) => {
+        it('should send no message when attempting to clear an unscheduled interval', () => {
+            const { promise, reject, resolve } = Promise.withResolvers();
+
             Worker.addEventListener(0, 'message', ({ data }) => {
                 if (data.method === 'clear') {
-                    done(new Error('This should never be called.'));
+                    reject(new Error('This should never be called.'));
                 }
             });
 
             workerTimers.clearInterval(id + 1);
 
-            setTimeout(done, 1000);
+            setTimeout(resolve, 1000);
+
+            return promise;
         });
     });
 
@@ -125,7 +134,9 @@ describe('module', () => {
             id = workerTimers.setTimeout(() => {}, 100);
         });
 
-        it('should send the correct clearing message', (done) => {
+        it('should send the correct clearing message', () => {
+            const { promise, resolve } = Promise.withResolvers();
+
             Worker.addEventListener(0, 'message', ({ data }) => {
                 try {
                     expect(data.id).to.be.a('number');
@@ -136,25 +147,31 @@ describe('module', () => {
                         params: { timerId: id, timerType: 'timeout' }
                     });
 
-                    done();
+                    resolve();
                 } catch (err) {
                     // This might happen if we catch the first message as well.
                 }
             });
 
             workerTimers.clearTimeout(id);
+
+            return promise;
         });
 
-        it('should send no message when attempting to clear an unscheduled timeout', (done) => {
+        it('should send no message when attempting to clear an unscheduled timeout', () => {
+            const { promise, reject, resolve } = Promise.withResolvers();
+
             Worker.addEventListener(0, 'message', ({ data }) => {
                 if (data.method === 'clear') {
-                    done(new Error('This should never be called.'));
+                    reject(new Error('This should never be called.'));
                 }
             });
 
             workerTimers.clearTimeout(id + 1);
 
-            setTimeout(done, 1000);
+            setTimeout(resolve, 1000);
+
+            return promise;
         });
     });
 
@@ -182,8 +199,8 @@ describe('module', () => {
             expect(id).to.be.above(0);
         });
 
-        it('should send the correct scheduling message', function (done) {
-            this.timeout(4000);
+        it('should send the correct scheduling message', () => {
+            const { promise, resolve } = Promise.withResolvers();
 
             Worker.addEventListener(0, 'message', ({ data }) => {
                 try {
@@ -195,17 +212,19 @@ describe('module', () => {
                         params: { delay, now: timeOrigin + now, timerId: id, timerType: 'interval' }
                     });
 
-                    done();
+                    resolve();
                 } catch (err) {
                     // This might happen if we catch the first message as well.
                 }
             });
 
             id = workerTimers.setInterval(() => {}, delay);
+
+            return promise;
         });
 
-        it('should send the correct scheduling message when omitting the delay', function (done) {
-            this.timeout(4000);
+        it('should send the correct scheduling message when omitting the delay', () => {
+            const { promise, resolve } = Promise.withResolvers();
 
             Worker.addEventListener(0, 'message', ({ data }) => {
                 try {
@@ -217,13 +236,15 @@ describe('module', () => {
                         params: { delay: 0, now: timeOrigin + now, timerId: id, timerType: 'interval' }
                     });
 
-                    done();
+                    resolve();
                 } catch (err) {
                     // This might happen if we catch the first message as well.
                 }
             });
 
             id = workerTimers.setInterval(() => {});
+
+            return promise;
         });
     });
 
@@ -251,8 +272,8 @@ describe('module', () => {
             expect(id).to.be.above(0);
         });
 
-        it('should send the correct scheduling message', function (done) {
-            this.timeout(4000);
+        it('should send the correct scheduling message', () => {
+            const { promise, resolve } = Promise.withResolvers();
 
             Worker.addEventListener(0, 'message', ({ data }) => {
                 try {
@@ -264,17 +285,19 @@ describe('module', () => {
                         params: { delay, now: timeOrigin + now, timerId: id, timerType: 'timeout' }
                     });
 
-                    done();
+                    resolve();
                 } catch (err) {
                     // This might happen if we catch the first message as well.
                 }
             });
 
             id = workerTimers.setTimeout(() => {}, delay);
+
+            return promise;
         });
 
-        it('should send the correct scheduling message when omitting the delay', function (done) {
-            this.timeout(4000);
+        it('should send the correct scheduling message when omitting the delay', () => {
+            const { promise, resolve } = Promise.withResolvers();
 
             Worker.addEventListener(0, 'message', ({ data }) => {
                 try {
@@ -286,13 +309,15 @@ describe('module', () => {
                         params: { delay: 0, now: timeOrigin + now, timerId: id, timerType: 'timeout' }
                     });
 
-                    done();
+                    resolve();
                 } catch (err) {
                     // This might happen if we catch the first message as well.
                 }
             });
 
             id = workerTimers.setTimeout(() => {});
+
+            return promise;
         });
     });
 });
