@@ -1,6 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createSetIntervalFactory } from '../../../src/factories/set-interval-factory';
-import { stub } from 'sinon';
 
 describe('setInterval()', () => {
     let args;
@@ -14,18 +13,18 @@ describe('setInterval()', () => {
 
     beforeEach(() => {
         args = ['a', 'b', 'c'];
-        callback = stub();
+        callback = vi.fn();
         delay = Math.random() * 1000;
-        generateUniqueNumber = stub();
-        set = stub();
+        generateUniqueNumber = vi.fn();
+        set = vi.fn();
         scheduledIntervalsState = new Map();
         timerId = Math.ceil(Math.random() * 1000);
 
         setInterval = createSetIntervalFactory(generateUniqueNumber, scheduledIntervalsState)(set);
 
-        generateUniqueNumber.returns(timerId);
-        set.onFirstCall().resolves(true);
-        set.onSecondCall().returns(new Promise(() => {}));
+        generateUniqueNumber.mockReturnValue(timerId);
+        set.mockResolvedValueOnce();
+        set.mockReturnValueOnce(new Promise(() => {}));
     });
 
     it('should return the timerId', () => {
@@ -35,7 +34,7 @@ describe('setInterval()', () => {
     it('should call generateUniqueNumber() with the given map', () => {
         setInterval(callback, delay, ...args);
 
-        expect(generateUniqueNumber).to.have.been.calledOnceWithExactly(scheduledIntervalsState);
+        expect(generateUniqueNumber).to.have.been.calledOnceWith(scheduledIntervalsState);
     });
 
     it('should set the state to a symbol', () => {
@@ -47,7 +46,7 @@ describe('setInterval()', () => {
     it('should call set() with the given delay', () => {
         setInterval(callback, delay, ...args);
 
-        expect(set).to.have.been.calledOnceWithExactly(delay, timerId);
+        expect(set).to.have.been.calledOnceWith(delay, timerId);
     });
 
     describe('without changing the state for the given timerId', () => {
@@ -57,7 +56,9 @@ describe('setInterval()', () => {
         beforeEach(() => {
             ({ promise, resolve } = Promise.withResolvers());
 
-            set.onFirstCall().resolves(promise);
+            set.mockReset();
+            set.mockReturnValueOnce(promise);
+            set.mockReturnValueOnce(new Promise(() => {}));
 
             setInterval(callback, delay, ...args);
         });
@@ -75,15 +76,15 @@ describe('setInterval()', () => {
 
             await promise;
 
-            expect(callback).to.have.been.calledOnceWithExactly(...args);
+            expect(callback).to.have.been.calledOnceWith(...args);
         });
 
         describe("with a callback function that doesn't change the state for the given timerId", () => {
             beforeEach(async () => {
                 resolve();
 
-                set.onFirstCall().returns(new Promise(() => {}));
-                set.resetHistory();
+                set.mockReturnValueOnce(new Promise(() => {}));
+                set.mockClear();
 
                 await promise;
             });
@@ -91,19 +92,19 @@ describe('setInterval()', () => {
             it('should call set() with the given delay', async () => {
                 await Promise.resolve();
 
-                expect(set).to.have.been.calledOnceWithExactly(delay, timerId);
+                expect(set).to.have.been.calledOnceWith(delay, timerId);
             });
         });
 
         describe('with a callback function that sets the state for the given timerId set to null', () => {
             beforeEach(async () => {
-                callback.callsFake(() => {
+                callback.mockImplementation(() => {
                     scheduledIntervalsState.set(timerId, null);
                 });
 
                 resolve();
 
-                set.resetHistory();
+                set.mockClear();
 
                 await promise;
             });
@@ -117,13 +118,13 @@ describe('setInterval()', () => {
 
         describe('with a callback function that deletes the state for the given timerId', () => {
             beforeEach(async () => {
-                callback.callsFake(() => {
+                callback.mockImplementation(() => {
                     scheduledIntervalsState.delete(timerId);
                 });
 
                 resolve();
 
-                set.resetHistory();
+                set.mockClear();
 
                 await promise;
             });

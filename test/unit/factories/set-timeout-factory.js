@@ -1,5 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { spy, stub } from 'sinon';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createSetTimeoutFactory } from '../../../src/factories/set-timeout-factory';
 
 describe('setTimeout()', () => {
@@ -14,17 +13,17 @@ describe('setTimeout()', () => {
 
     beforeEach(() => {
         args = ['a', 'b', 'c'];
-        callback = spy();
+        callback = vi.fn();
         delay = Math.random() * 1000;
-        generateUniqueNumber = stub();
-        set = stub();
+        generateUniqueNumber = vi.fn();
+        set = vi.fn();
         scheduledTimeoutsState = new Map();
         timerId = Math.ceil(Math.random() * 1000);
 
         setTimeout = createSetTimeoutFactory(generateUniqueNumber, scheduledTimeoutsState)(set);
 
-        generateUniqueNumber.returns(timerId);
-        set.resolves(true);
+        generateUniqueNumber.mockReturnValue(timerId);
+        set.mockResolvedValue(true);
     });
 
     it('should return the timerId', () => {
@@ -34,7 +33,7 @@ describe('setTimeout()', () => {
     it('should call generateUniqueNumber() with the given map', () => {
         setTimeout(callback, delay, ...args);
 
-        expect(generateUniqueNumber).to.have.been.calledOnceWithExactly(scheduledTimeoutsState);
+        expect(generateUniqueNumber).to.have.been.calledOnceWith(scheduledTimeoutsState);
     });
 
     it('should set the state to a symbol', () => {
@@ -46,7 +45,7 @@ describe('setTimeout()', () => {
     it('should call set() with the given delay', () => {
         setTimeout(callback, delay, ...args);
 
-        expect(set).to.have.been.calledOnceWithExactly(delay, timerId);
+        expect(set).to.have.been.calledOnceWith(delay, timerId);
     });
 
     describe('without changing the state for the given timerId', () => {
@@ -63,7 +62,7 @@ describe('setTimeout()', () => {
         it('should call the callback function with the given arguments', async () => {
             await Promise.resolve();
 
-            expect(callback).to.have.been.calledOnceWithExactly(...args);
+            expect(callback).to.have.been.calledOnceWith(...args);
         });
     });
 

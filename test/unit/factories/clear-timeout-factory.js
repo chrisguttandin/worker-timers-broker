@@ -1,6 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createClearTimeoutFactory } from '../../../src/factories/clear-timeout-factory';
-import { stub } from 'sinon';
 
 describe('clearTimeout()', () => {
     let clear;
@@ -9,13 +8,13 @@ describe('clearTimeout()', () => {
     let timerId;
 
     beforeEach(() => {
-        clear = stub();
+        clear = vi.fn();
         scheduledTimeoutsState = new Map();
         timerId = Math.ceil(Math.random() * 1000);
 
         clearTimeout = createClearTimeoutFactory(scheduledTimeoutsState)(clear);
 
-        clear.resolves(true);
+        clear.mockResolvedValue(true);
     });
 
     describe('without a state for the given timerId', () => {
@@ -76,7 +75,7 @@ describe('clearTimeout()', () => {
         it('should call clear() with the given timerId', () => {
             clearTimeout(timerId);
 
-            expect(clear).to.have.been.calledOnceWithExactly(timerId);
+            expect(clear).to.have.been.calledOnceWith(timerId);
         });
 
         describe('after the promise returned by clear() resolved', () => {
