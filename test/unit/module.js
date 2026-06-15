@@ -100,7 +100,7 @@ describe('module', () => {
                     });
 
                     resolve();
-                } catch (err) {
+                } catch {
                     // This might happen if we catch the first message as well.
                 }
             });
@@ -148,7 +148,7 @@ describe('module', () => {
                     });
 
                     resolve();
-                } catch (err) {
+                } catch {
                     // This might happen if we catch the first message as well.
                 }
             });
@@ -213,7 +213,7 @@ describe('module', () => {
                     });
 
                     resolve();
-                } catch (err) {
+                } catch {
                     // This might happen if we catch the first message as well.
                 }
             });
@@ -237,7 +237,7 @@ describe('module', () => {
                     });
 
                     resolve();
-                } catch (err) {
+                } catch {
                     // This might happen if we catch the first message as well.
                 }
             });
@@ -286,7 +286,7 @@ describe('module', () => {
                     });
 
                     resolve();
-                } catch (err) {
+                } catch {
                     // This might happen if we catch the first message as well.
                 }
             });
@@ -310,7 +310,7 @@ describe('module', () => {
                     });
 
                     resolve();
-                } catch (err) {
+                } catch {
                     // This might happen if we catch the first message as well.
                 }
             });
