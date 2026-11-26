@@ -13,7 +13,7 @@
         "broker-factory": "^3.1.16",
         "fast-unique-numbers": "^9.0.27",
         "tslib": "^2.9.1",
-        "worker-timers-worker": "^9.0.15"
+        "worker-timers-worker": "^9.0.16"
     },
     "description": "The broker which is used by the worker-timers package.",
     "devDependencies": {
